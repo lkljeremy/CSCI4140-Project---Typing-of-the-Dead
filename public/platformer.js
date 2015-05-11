@@ -9,7 +9,6 @@
 // target for the player.
 
 
-var otherjs = require("dict1");
 console.log(dict[3]);
 
 window.addEventListener("load",function() {
