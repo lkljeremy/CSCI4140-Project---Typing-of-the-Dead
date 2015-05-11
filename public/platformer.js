@@ -130,7 +130,7 @@ Q.scene("level1",function(stage) {
 		label_text: "Enemy",
 		label_text_color: 'grey',
 		label_offset_x: 0,
-		label_offset_y: 0
+		label_offset_y: 50
 	}));
 	
 	var label = stage.insert(new Q.UI.Text({
