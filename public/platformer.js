@@ -71,7 +71,7 @@ Q.Sprite.extend("Tower", {
 // Create the Enemy class to add in some baddies
 Q.Sprite.extend("Enemy",{
   init: function(p) {
-    this._super(p, { sheet: 'enemy', vx: 100 });
+    this._super(p, { sheet: 'enemy', vx: 100, text: 'default text' });
 
     // Enemies use the Bounce AI to change direction 
     // whenver they run into something.
@@ -118,9 +118,28 @@ Q.scene("level1",function(stage) {
   stage.add("viewport").follow(player);
 
   // Add in a couple of enemies
+  /*
   stage.insert(new Q.Enemy({ x: 700, y: 0 }));
   stage.insert(new Q.Enemy({ x: 800, y: 0 }));
+	*/
 
+	// labelled enemy
+	var label_sprite = stage.insert(new Q.Enemy({
+		x: 700, 
+		y: 0, 
+		label_text: "Enemy",
+		label_text_color: 'grey',
+		label_offset_x: 0,
+		label_offset_y: 0
+	}));
+	
+	var label = stage.insert(new Q.UI.Text({
+		label: label_sprite.p.label_text,
+		color: label_sprite.p.label_text_color,
+		x: label_sprite.p.label_offset_x,
+		y: label_sprite.p.label_offset_y
+	}), label_sprite);
+	
   // Finally add in the tower goal
   stage.insert(new Q.Tower({ x: 180, y: 50 }));
 });
