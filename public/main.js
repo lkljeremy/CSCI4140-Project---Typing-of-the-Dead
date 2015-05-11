@@ -1,15 +1,8 @@
 // main.js
 // the main javascript file for the game - Typing of the Dead
 
+// array of words in dictionary
 var dict = [];
-var filePath = "/dict.txt";
-var reader = new FileReader();
-reader.onload = function(event){
-	var contents = event.target.result;
-	console.log("File contents: " + contents);
-}
-
-
 
 
 
