@@ -108,7 +108,7 @@ Q.Sprite.extend("Enemy",{
 Q.UI.Text.extend("Score",{ 
   init: function(p) {
     this._super({
-      label: "score: 0",
+      label: "score: 100",
       x: 0,
       y: 0
     });
@@ -142,6 +142,8 @@ Q.scene("level1",function(stage) {
   // to follow the player.
   stage.add("viewport").follow(player);
 
+  stage.insert(new Q.Score());
+  
   // add in the tower goal
   stage.insert(new Q.Tower({ x: 180, y: 50 }));
   
