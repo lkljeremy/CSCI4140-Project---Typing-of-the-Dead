@@ -1,8 +1,7 @@
 // main.js
 // the main javascript file for the game - Typing of the Dead
 
-// array of words in dictionary
-var dict = [];
+
 
 
 
@@ -54,8 +53,9 @@ Q.Sprite.extend("monster", {
 });	
 
 // start scene
-
-
+Q.scene("start",function(stage) {
+	
+});
 
 // level1 scene
 // main game scene
@@ -72,7 +72,6 @@ Q.scene("level1",function(stage) {
 
 						
 	// randomly generate a word from dict
-	var dictSize = 73023;
 	var ran = Math.floor(Math.random()*(dictSize));
 	var targetText = dict[ran];
 	
