@@ -9,7 +9,7 @@
 // target for the player.
 
 
-console.log(dict1.dict[3]);
+console.log(dict.length);
 
 window.addEventListener("load",function() {
 
