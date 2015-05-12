@@ -109,7 +109,7 @@ Q.UI.Text.extend("Score",{
   init: function(p) {
     this._super({
       label: "score: 100",
-      x: 0,
+      x: 50,
       y: 0
     });
 
