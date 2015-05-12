@@ -11,6 +11,7 @@
 // print length of array in dictionary.js
 var dictSize = dict.length;
 console.log("Dictionary length: " + dictSize);
+var generator;
 
 
 window.addEventListener("load",function() {
@@ -19,194 +20,190 @@ window.addEventListener("load",function() {
 // the Sprites, Scenes, Input and 2D module. The 2D module
 // includes the `TileLayer` class as well as the `2d` componet.
 var Q = window.Q = Quintus()
-        .include("Sprites, Scenes, Input, 2D, Anim, Touch, UI")
-        // Maximize this game to whatever the size of the browser is
-        .setup({ maximize: true })
-        // And turn on default input controls and touch input (for UI)
-        .controls().touch()
+		.include("Sprites, Scenes, Input, 2D, Anim, Touch, UI")
+		// Maximize this game to whatever the size of the browser is
+		.setup({ maximize: true })
+		// And turn on default input controls and touch input (for UI)
+		.controls().touch()
 
-// ## Player Sprite
-// The very basic player sprite, this is just a normal sprite
-// using the player sprite sheet with default controls added to it.
-Q.Sprite.extend("Player",{
+		
+		
+// Define the sprites
+// the init constructor is called on creation
 
-  // the init constructor is called on creation
-  init: function(p) {
-
-    // You can call the parent's constructor with this._super(..)
-    this._super(p, {
-      sheet: "player",  // Setting a sprite sheet sets sprite width and height
-      x: 410,           // You can also set additional properties that can
-      y: 90             // be overridden on object creation
-    });
-
-    // Add in pre-made components to get up and running quickly
-    // The `2d` component adds in default 2d collision detection
-    // and kinetics (velocity, gravity)
-    // The `platformerControls` makes the player controllable by the
-    // default input actions (left, right to move,  up or action to jump)
-    // It also checks to make sure the player is on a horizontal surface before
-    // letting them jump.
-    this.add('2d, platformerControls');
-
-    // Write event handlers to respond hook into behaviors.
-    // hit.sprite is called everytime the player collides with a sprite
-    this.on("hit.sprite",function(collision) {
-
-      // Check the collision, if it's the Tower, you win!
-      if(collision.obj.isA("Tower")) {
-        Q.stageScene("endGame",1, { label: "You Won!" }); 
-        this.destroy();
-      }
-    });
-
-  }
-
+// Base sprite
+Q.Sprite.extend("Base", {
+	init: function(p) {
+		this._super(p, { 
+			asset: 'base.png' 
+		});
+	}
+	
 });
+		
 
-
-// ## Tower Sprite
-// Sprites can be simple, the Tower sprite just sets a custom sprite sheet
-Q.Sprite.extend("Tower", {
-  init: function(p) {
-    this._super(p, { sheet: 'tower' });
-  }
-});
-
-// ## Enemy Sprite
-// Create the Enemy class to add in some baddies
+// Enemy Sprite
 Q.Sprite.extend("Enemy",{
   init: function(p) {
-    this._super(p, { sheet: 'enemy', vx: 100, text: 'default text' });
+	this._super(p, { 
+		// sheet: 'enemy',
+		asset: "lufsig.png",
+		vx: 100, 
+		text: 'default text' 
+	});
 
-    // Enemies use the Bounce AI to change direction 
-    // whenver they run into something.
-    this.add('2d, aiBounce');
+	// Enemies use the Bounce AI to change direction 
+	// whenver they run into something.
+	this.add('2d, aiBounce');
 
-    // Listen for a sprite collision, if it's the player,
-    // end the game unless the enemy is hit on top
-    this.on("bump.left,bump.right,bump.bottom",function(collision) {
-      if(collision.obj.isA("Player")) { 
-        Q.stageScene("endGame",1, { label: "You Died" }); 
-        collision.obj.destroy();
-      }
-    });
+	// Listen for a sprite collision
+	this.on("bump.left,bump.right,bump.bottom",function(collision) {
+		if(collision.obj.isA("Base")) { 
+			// minus the score
+			Q.state.dec("score", 10);
+			this.destroy();
+			
+			// check if score equals zero, end the game
+			if (Q.state.get("score") == 0){
+				clearInterval(generator);
+				Q.state.reset({score: 0});
+				Q.stageScene("endGame",1, { label: "Game Over!" });
+			}
+	  }
+	});
 
-    // If the enemy gets hit on the top, destroy it
-    // and give the user a "hop"
-    this.on("bump.top",function(collision) {
-      if(collision.obj.isA("Player")) { 
-        this.destroy();
-        collision.obj.p.vy = -300;
-      }
-    });
   }
 });
 
 
 // score sprite
 Q.UI.Text.extend("Score",{ 
-  init: function(p) {
-    this._super({
-      label: "score: 100",
-      x: 50,
-      y: 0
-    });
+	init: function(p) {
+		this._super({
+			label: "score: 100",
+			x: 80,
+			y: 0
+		});
 
-    Q.state.on("change.score",this,"score");
-  },
+		Q.state.on("change.score",this,"score");
+	},
 
-  score: function(score) {
-    this.p.label = "score: " + score;
-  }
+	score: function(score) {
+		this.p.label = "score: " + score;
+	}
 });
+
+// input key display
+Q.UI.Text.extend("Input",{ 
+	init: function(p) {
+		this._super({
+			label: "Input: ",
+			x: 200,
+			y: 200
+		});
+
+		Q.state.on("change.score",this,"score");
+	},
+
+	score: function(score) {
+		this.p.label = "score: " + score;
+	}
+});
+
 
 
 // ## Level1 scene
 // Create a new scene called level 1
 Q.scene("level1",function(stage) {
+	
+	// reset the score
+	Q.state.reset({score: 100});
+	
+	// Add in a repeater for a little parallax action
+	stage.insert(new Q.Repeater({ asset: "background-wall.png", speedX: 0.5, speedY: 0.5 }));
 
-  // Add in a repeater for a little parallax action
-  stage.insert(new Q.Repeater({ asset: "background-wall.png", speedX: 0.5, speedY: 0.5 }));
-
-  // Add in a tile layer, and make it the collision layer
-  stage.collisionLayer(new Q.TileLayer({
-                             dataAsset: 'level.json',
-                             sheet:     'tiles' }));
-
-
-  // Create the player and add them to the stage
-  var player = stage.insert(new Q.Player());
-
-  // Give the stage a moveable viewport and tell it
-  // to follow the player.
-  stage.add("viewport").follow(player);
-
-  stage.insert(new Q.Score());
+	// Add in a tile layer, and make it the collision layer
+	stage.collisionLayer(new Q.TileLayer({
+							dataAsset: 'level.json',
+							sheet: 'tiles' 
+						}));
+	
+	// add score display
+	stage.insert(new Q.Score());
+	
+	// add Base 
+	stage.insert(new Q.Base({ x: 180, y: 160 }));
   
-  // add in the tower goal
-  stage.insert(new Q.Tower({ x: 180, y: 50 }));
-  
-  // Add in a couple of enemies
-  /*
-  stage.insert(new Q.Enemy({ x: 700, y: 0 }));
-  stage.insert(new Q.Enemy({ x: 800, y: 0 }));
-	*/
+	// generate Enemy every 2 sec
+	generator = setInterval(function(){
+		// randomly generate a word from dict
+		var ran = Math.floor(Math.random()*(dictSize));
+		var targetText = dict[ran];
+		// console.log("Word generated: " + targetText);
+		
+		// labelled enemy
+		var label_sprite = stage.insert(new Q.Enemy({
+			x: 700, 
+			y: 0, 
+			label_text: targetText,
+			label_text_color: 'grey',
+			label_offset_x: 0,
+			label_offset_y: -50
+		}));
+		
+		var label = stage.insert(new Q.UI.Text({
+			label: label_sprite.p.label_text,
+			color: label_sprite.p.label_text_color,
+			x: label_sprite.p.label_offset_x,
+			y: label_sprite.p.label_offset_y
+		}), label_sprite);
 	
+	}, 2000);
 	
-	// randomly generate a word from dict
-	var ran = Math.floor(Math.random()*(dictSize));
-	var targetText = dict[ran];
-	console.log("Word generated: " + targetText);
-	
-	// labelled enemy
-	var label_sprite = stage.insert(new Q.Enemy({
-		x: 700, 
-		y: 0, 
-		label_text: targetText,
-		label_text_color: 'grey',
-		label_offset_x: 0,
-		label_offset_y: -50
-	}));
-	
-	var label = stage.insert(new Q.UI.Text({
-		label: label_sprite.p.label_text,
-		color: label_sprite.p.label_text_color,
-		x: label_sprite.p.label_offset_x,
-		y: label_sprite.p.label_offset_y
-	}), label_sprite);
-	
+	function myStopFunction() {
+		clearInterval(generator);
+	}
 });
 
-// To display a game over / game won popup box, 
-// create a endGame scene that takes in a `label` option
-// to control the displayed message.
+// endGame scene
+// to display a game over popup box
 Q.scene('endGame',function(stage) {
-  var container = stage.insert(new Q.UI.Container({
-    x: Q.width/2, y: Q.height/2, fill: "rgba(0,0,0,0.5)"
-  }));
+	var container = stage.insert(new Q.UI.Container({
+		x: Q.width/2, 
+		y: Q.height/2, 
+		fill: "rgba(0,0,0,0.5)"
+	}));
 
-  var button = container.insert(new Q.UI.Button({ x: 0, y: 0, fill: "#CCCCCC",
-                                                  label: "Play Again" }))         
-  var label = container.insert(new Q.UI.Text({x:10, y: -10 - button.p.h, 
-                                                   label: stage.options.label }));
-  // When the button is clicked, clear all the stages
-  // and restart the game.
-  button.on("click",function() {
-    Q.clearStages();
-    Q.stageScene('level1');
-  });
+	var button = container.insert(new Q.UI.Button({ 
+		x: 0, 
+		y: 0, 
+		fill: "#CCCCCC",
+		label: "Play Again" 
+	}));
+	
+	var label = container.insert(new Q.UI.Text({
+		x:10, 
+		y: -10 - button.p.h, 
+		label: stage.options.label 
+	}));
+	
+	// When the button is clicked, clear all the stages
+	// and restart the game.
+	button.on("click",function() {
+		Q.clearStages();
+		Q.stageScene('level1');
+	});
 
-  // Expand the container to visibily fit it's contents
-  // (with a padding of 20 pixels)
-  container.fit(20);
+	// Expand the container to visibily fit it's contents
+	// (with a padding of 20 pixels)
+	container.fit(20);
 });
 
 // ## Asset Loading and Game Launch
 // Q.load can be called at any time to load additional assets
 // assets that are already loaded will be skipped
 // The callback will be triggered when everything is loaded
-Q.load("sprites.png, sprites.json, level.json, tiles.png, background-wall.png", function() {
+Q.load("base.png, lufsig.png, sprites.png, sprites.json, level.json, tiles.png, background-wall.png", function() {
   // Sprites sheets can be created manually
   Q.sheet("tiles","tiles.png", { tilew: 32, tileh: 32 });
 
