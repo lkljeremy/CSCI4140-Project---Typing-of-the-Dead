@@ -72,25 +72,9 @@ Q.scene("level1",function(stage) {
 
 						
 	// randomly generate a word from dict
-	var ran = Math.floor(Math.random()*(dictSize));
-	var targetText = dict[ran];
 	
 	// labelled enemy
-	var label_sprite = stage.insert(new Q.Enemy({
-		x: 700, 
-		y: 0, 
-		label_text: "Enemy",
-		label_text_color: 'grey',
-		label_offset_x: 0,
-		label_offset_y: -50
-	}));
 	
-	var label = stage.insert(new Q.UI.Text({
-		label: label_sprite.p.label_text,
-		color: label_sprite.p.label_text_color,
-		x: label_sprite.p.label_offset_x,
-		y: label_sprite.p.label_offset_y
-	}), label_sprite);
 	
 	// Finally add in the tower goal
 	stage.insert(new Q.Base({ x: 180, y: 50 }));

@@ -103,6 +103,25 @@ Q.Sprite.extend("Enemy",{
   }
 });
 
+
+// score sprite
+Q.UI.Text.extend("Score",{ 
+  init: function(p) {
+    this._super({
+      label: "score: 0",
+      x: 0,
+      y: 0
+    });
+
+    Q.state.on("change.score",this,"score");
+  },
+
+  score: function(score) {
+    this.p.label = "score: " + score;
+  }
+});
+
+
 // ## Level1 scene
 // Create a new scene called level 1
 Q.scene("level1",function(stage) {
@@ -123,6 +142,9 @@ Q.scene("level1",function(stage) {
   // to follow the player.
   stage.add("viewport").follow(player);
 
+  // add in the tower goal
+  stage.insert(new Q.Tower({ x: 180, y: 50 }));
+  
   // Add in a couple of enemies
   /*
   stage.insert(new Q.Enemy({ x: 700, y: 0 }));
@@ -133,7 +155,7 @@ Q.scene("level1",function(stage) {
 	// randomly generate a word from dict
 	var ran = Math.floor(Math.random()*(dictSize));
 	var targetText = dict[ran];
-	
+	console.log("Word generated: " + targetText);
 	
 	// labelled enemy
 	var label_sprite = stage.insert(new Q.Enemy({
@@ -152,8 +174,6 @@ Q.scene("level1",function(stage) {
 		y: label_sprite.p.label_offset_y
 	}), label_sprite);
 	
-  // Finally add in the tower goal
-  stage.insert(new Q.Tower({ x: 180, y: 50 }));
 });
 
 // To display a game over / game won popup box, 
