@@ -233,7 +233,7 @@ Q.scene("level1",function(stage) {
 		
 	
 	// detect key pressed, event "keydown"
-	Q.input.on("keydown", stage, function(e){
+	Q.input.on("keypress", stage, function(e){
 		try{
 			if (e >= 65 && e <=90){
 				// A-Z: add the char to inText
