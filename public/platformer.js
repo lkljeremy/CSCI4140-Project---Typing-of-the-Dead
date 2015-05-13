@@ -13,8 +13,11 @@ var dictSize = dict.length;
 console.log("Dictionary length: " + dictSize);
 var generator;
 var speed = -80;		// -ve: move to left
-var minSpeed = -20;
+var minSpeed = -0;
 var interval = 2000;
+var total = 0;
+var enemies = [];
+var inText = "";
 
 // values for collision detection
 // when (A's collisionMask = B's type) ==> collision!!
@@ -67,14 +70,14 @@ Q.Sprite.extend("Enemy",{
 	// Listen for a sprite collision
 	this.on("bump.left,bump.right,bump.bottom",function(collision) {
 		if(collision.obj.isA("Base")) { 
-			// minus the score
-			Q.state.dec("score", 10);
+			// minus the HP
+			Q.state.dec("HP", 10);
 			this.destroy();
 			
-			// check if score equals zero, end the game
-			if (Q.state.get("score") == 0){
+			// check if HP equals zero, end the game
+			if (Q.state.get("HP") == 0){
 				clearInterval(generator);
-				Q.state.reset({score: 0});
+				Q.state.reset({HP: 0});
 				Q.stageScene("endGame",1, { label: "Game Over!" });
 			}
 	  }
@@ -84,20 +87,37 @@ Q.Sprite.extend("Enemy",{
 });
 
 
-// score sprite
-Q.UI.Text.extend("Score",{ 
+// HP sprite
+Q.UI.Text.extend("HP",{ 
 	init: function(p) {
 		this._super({
-			label: "score: 100",
+			label: "HP: 100",
 			x: 80,
 			y: 0
 		});
 
-		Q.state.on("change.score",this,"score");
+		Q.state.on("change.HP",this,"HP");
 	},
 
-	score: function(score) {
-		this.p.label = "score: " + score;
+	HP: function(HP) {
+		this.p.label = "HP: " + HP;
+	}
+});
+
+// number of kills display
+Q.UI.Text.extend("Kill",{ 
+	init: function(p) {
+		this._super({
+			label: "Kills: 0",
+			x: 250,
+			y: 0
+		});
+
+		Q.state.on("change.kill",this,"kill");
+	},
+
+	kill: function(kill) {
+		this.p.label = "Kills: " + kill;
 	}
 });
 
@@ -106,42 +126,26 @@ Q.UI.Text.extend("Input",{
 	init: function(p) {
 		this._super({
 			label: "Input: ",
-			x: 200,
+			x: 500,
 			y: 300
 		});
 
 	},
 
 	input: function(label) {
-		console.log("Key: " + Q.inputs);
 		this.p.label = "Input: " + label;
 	}
 });
 
 
 // ## Level1 scene
-// Create a new scene called level 1
 Q.scene("level1",function(stage) {
 	
-	
-	// detect key pressed, event "keydown"
-	Q.input.on("keydown", stage, function(e){
-		try{
-			var key = String.fromCharCode(e);
-			console.log("Key: " + key);
-			
-		} catch (err){
-			console.log(err);
-		}
-	});
-	
-	Q.input.on("single", stage, function(e){
-		console.log("'!");
-		
-	});
-		
-	// reset the score
-	Q.state.reset({score: 100});
+	// initialization: reset the game states, inText, enemies, total number of enemies
+	Q.state.reset({HP: 100, kill: 0});
+	inText = "";
+	enemies = [];
+	total = 0;
 	
 	// Add in a repeater for a little parallax action
 	stage.insert(new Q.Repeater({ asset: "background-wall.png", speedX: 0.5, speedY: 0.5 }));
@@ -153,11 +157,12 @@ Q.scene("level1",function(stage) {
 							type: SPRITE_OTHER							
 						}));
 	
-	// add score display
-	stage.insert(new Q.Score());
+	// add HP and kill display
+	stage.insert(new Q.HP());
+	stage.insert(new Q.Kill());
 	
 	// add input display
-	stage.insert(new Q.Input());
+	var inputDisplay = stage.insert(new Q.Input());
 	
 	// add Base 
 	stage.insert(new Q.Base({ x: 180, y: 160 }));
@@ -170,7 +175,7 @@ Q.scene("level1",function(stage) {
 		// console.log("Word generated: " + targetText);
 		
 		// labelled enemy
-		var label_sprite = stage.insert(new Q.Enemy({
+		enemies[total] = stage.insert(new Q.Enemy({
 			x: 1200, 
 			y: 0, 
 			label_text: targetText,
@@ -180,14 +185,14 @@ Q.scene("level1",function(stage) {
 		}));
 		
 		var container = stage.insert(new Q.UI.Container({
-		x: label_sprite.p.label_offset_x,
-		y: label_sprite.p.label_offset_y, 
+		x: enemies[total].p.label_offset_x,
+		y: enemies[total].p.label_offset_y, 
 		fill: "rgba(256,0,0,0.5)"
-		}), label_sprite);
+		}), enemies[total]);
 		
 		var label = container.insert(new Q.UI.Text({
 		label: targetText,
-		color: label_sprite.p.label_text_color
+		color: enemies[total].p.label_text_color
 		}));
 		
 		/*
@@ -199,15 +204,83 @@ Q.scene("level1",function(stage) {
 		}), label_sprite);
 		*/
 		
+		total++;
+		
 	}, interval);
+
+		
 	
-	function myStopFunction() {
-		clearInterval(generator);
-	}
+	// detect key pressed, event "keydown"
+	Q.input.on("keydown", stage, function(e){
+		try{
+			if (e >= 65 && e <=90){
+				// A-Z: add the char to inText
+				var key = String.fromCharCode(e);
+				// console.log("Key: " + key);
+				inText += key;
+				
+			} else if (e == 32){
+				// space: fire the string
+				console.log("Fire! String: " + inText);
+				for (i = 0; i < total; i++){
+					if (inText == enemies[i].p.label_text.toUpperCase()){
+						enemies[i].destroy();
+						Q.state.inc("kill", 1);
+					}
+				}
+				
+				inText = "";
+				
+			} else if (e == 8){
+				// backspace: remove last typed char
+				console.log("Backspace!");
+				inText = inText.slice(0,-1);
+			} else {
+				// others: do nothing
+			}
+			
+			inputDisplay.input(inText);
+			
+		} catch (err){
+			console.log(err);
+		}
+	});
+	
+	
 });
 
-// endGame scene
-// to display a game over popup box
+// start scene
+Q.scene('start',function(stage) {
+	var container = stage.insert(new Q.UI.Container({
+		x: Q.width/2, 
+		y: Q.height/2, 
+		fill: "rgba(0,0,0,0.5)"
+	}));
+
+	var button = container.insert(new Q.UI.Button({ 
+		x: 0, 
+		y: 0, 
+		fill: "#CCCCCC",
+		label: "Play Again" 
+	}));
+	
+	var label = container.insert(new Q.UI.Text({
+		x:10, 
+		y: -10 - button.p.h, 
+		label: stage.options.label 
+	}));
+	
+	// When the button is clicked, clear all the stages and restart the game.
+	button.on("click",function() {
+		Q.clearStages();
+		Q.stageScene('level1');
+	});
+
+	// Expand the container to visibily fit it's contents (with a padding of 20 pixels)
+	container.fit(20);
+});
+
+// endGame scene: to display a game over popup box
 Q.scene('endGame',function(stage) {
 	var container = stage.insert(new Q.UI.Container({
 		x: Q.width/2, 
@@ -228,22 +301,17 @@ Q.scene('endGame',function(stage) {
 		label: stage.options.label 
 	}));
 	
-	// When the button is clicked, clear all the stages
-	// and restart the game.
+	// When the button is clicked, clear all the stages and restart the game.
 	button.on("click",function() {
 		Q.clearStages();
 		Q.stageScene('level1');
 	});
 
-	// Expand the container to visibily fit it's contents
-	// (with a padding of 20 pixels)
+	// Expand the container to visibily fit it's contents (with a padding of 20 pixels)
 	container.fit(20);
 });
 
 // ## Asset Loading and Game Launch
-// Q.load can be called at any time to load additional assets
-// assets that are already loaded will be skipped
-// The callback will be triggered when everything is loaded
 Q.load("base.png, lufsig.png, sprites.png, sprites.json, level.json, tiles.png, background-wall.png", function() {
 	// Sprites sheets can be created manually
 	Q.sheet("tiles","tiles.png", { tilew: 32, tileh: 32 });
@@ -260,16 +328,5 @@ Q.load("base.png, lufsig.png, sprites.png, sprites.json, level.json, tiles.png, 
 	// Turn on default keyboard controls
 	Q.input.keyboardControls(Quintus.Input.KEY_NAMES);
 });
-
-// ## Possible Experimentations:
-// 
-// The are lots of things to try out here.
-// 
-// 1. Modify level.json to change the level around and add in some more enemies.
-// 2. Add in a second level by creating a level2.json and a level2 scene that gets
-//    loaded after level 1 is complete.
-// 3. Add in a title screen
-// 4. Add in a hud and points for jumping on enemies.
-// 5. Add in a `Repeater` behind the TileLayer to create a paralax scrolling effect.
 
 });

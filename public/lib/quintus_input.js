@@ -97,6 +97,7 @@ Quintus.Input = function(Q) {
 	X: 'X',
 	Y: 'Y',
 	Z: 'Z',
+	BACKSPACE: 'backspace'
 	// NOT working:
 	// SINGLE_QUOTE: 'single'
   };
