@@ -8,10 +8,19 @@
 // a simple, non-animated platformer with some enemies and a 
 // target for the player.
 
-// print length of array in dictionary.js
+// global variables
 var dictSize = dict.length;
 console.log("Dictionary length: " + dictSize);
 var generator;
+var speed = -80;		// -ve: move to left
+var minSpeed = -20;
+var interval = 2000;
+
+// values for collision detection
+// when (A's collisionMask = B's type) ==> collision!!
+var SPRITE_NONE = 0;
+var SPRITE_RACER = 1;
+var SPRITE_OTHER = 2;
 
 
 window.addEventListener("load",function() {
@@ -35,26 +44,25 @@ var Q = window.Q = Quintus()
 Q.Sprite.extend("Base", {
 	init: function(p) {
 		this._super(p, { 
-			asset: 'base.png' 
+			asset: 'base.png',
+			type: SPRITE_OTHER
 		});
 	}
 	
 });
-		
 
 // Enemy Sprite
 Q.Sprite.extend("Enemy",{
   init: function(p) {
 	this._super(p, { 
-		// sheet: 'enemy',
 		asset: "lufsig.png",
-		vx: 100, 
-		text: 'default text' 
+		vx: minSpeed + speed, 	//  * Math.random()
+		text: 'default text',
+		type: SPRITE_RACER,
+		collisionMask: SPRITE_OTHER
 	});
 
-	// Enemies use the Bounce AI to change direction 
-	// whenver they run into something.
-	this.add('2d, aiBounce');
+	this.add('2d');
 
 	// Listen for a sprite collision
 	this.on("bump.left,bump.right,bump.bottom",function(collision) {
@@ -99,23 +107,39 @@ Q.UI.Text.extend("Input",{
 		this._super({
 			label: "Input: ",
 			x: 200,
-			y: 200
+			y: 300
 		});
 
-		Q.state.on("change.score",this,"score");
 	},
 
-	score: function(score) {
-		this.p.label = "score: " + score;
+	input: function(label) {
+		console.log("Key: " + Q.inputs);
+		this.p.label = "Input: " + label;
 	}
 });
-
 
 
 // ## Level1 scene
 // Create a new scene called level 1
 Q.scene("level1",function(stage) {
 	
+	
+	// detect key pressed, event "keydown"
+	Q.input.on("keydown", stage, function(e){
+		try{
+			var key = String.fromCharCode(e);
+			console.log("Key: " + key);
+			
+		} catch (err){
+			console.log(err);
+		}
+	});
+	
+	Q.input.on("single", stage, function(e){
+		console.log("'!");
+		
+	});
+		
 	// reset the score
 	Q.state.reset({score: 100});
 	
@@ -125,16 +149,20 @@ Q.scene("level1",function(stage) {
 	// Add in a tile layer, and make it the collision layer
 	stage.collisionLayer(new Q.TileLayer({
 							dataAsset: 'level.json',
-							sheet: 'tiles' 
+							sheet: 'tiles',
+							type: SPRITE_OTHER							
 						}));
 	
 	// add score display
 	stage.insert(new Q.Score());
 	
+	// add input display
+	stage.insert(new Q.Input());
+	
 	// add Base 
 	stage.insert(new Q.Base({ x: 180, y: 160 }));
   
-	// generate Enemy every 2 sec
+	// generate Enemy every 2 sec interval
 	generator = setInterval(function(){
 		// randomly generate a word from dict
 		var ran = Math.floor(Math.random()*(dictSize));
@@ -143,7 +171,7 @@ Q.scene("level1",function(stage) {
 		
 		// labelled enemy
 		var label_sprite = stage.insert(new Q.Enemy({
-			x: 700, 
+			x: 1200, 
 			y: 0, 
 			label_text: targetText,
 			label_text_color: 'grey',
@@ -151,14 +179,27 @@ Q.scene("level1",function(stage) {
 			label_offset_y: -50
 		}));
 		
+		var container = stage.insert(new Q.UI.Container({
+		x: label_sprite.p.label_offset_x,
+		y: label_sprite.p.label_offset_y, 
+		fill: "rgba(256,0,0,0.5)"
+		}), label_sprite);
+		
+		var label = container.insert(new Q.UI.Text({
+		label: targetText,
+		color: label_sprite.p.label_text_color
+		}));
+		
+		/*
 		var label = stage.insert(new Q.UI.Text({
 			label: label_sprite.p.label_text,
 			color: label_sprite.p.label_text_color,
 			x: label_sprite.p.label_offset_x,
 			y: label_sprite.p.label_offset_y
 		}), label_sprite);
-	
-	}, 2000);
+		*/
+		
+	}, interval);
 	
 	function myStopFunction() {
 		clearInterval(generator);
@@ -204,14 +245,20 @@ Q.scene('endGame',function(stage) {
 // assets that are already loaded will be skipped
 // The callback will be triggered when everything is loaded
 Q.load("base.png, lufsig.png, sprites.png, sprites.json, level.json, tiles.png, background-wall.png", function() {
-  // Sprites sheets can be created manually
-  Q.sheet("tiles","tiles.png", { tilew: 32, tileh: 32 });
+	// Sprites sheets can be created manually
+	Q.sheet("tiles","tiles.png", { tilew: 32, tileh: 32 });
 
-  // Or from a .json asset that defines sprite locations
-  Q.compileSheets("sprites.png","sprites.json");
+	// Or from a .json asset that defines sprite locations
+	Q.compileSheets("sprites.png","sprites.json");
 
-  // Finally, call stageScene to run the game
-  Q.stageScene("level1");
+	// call stageScene to run the game
+	Q.stageScene("level1");
+  
+	// Turn visual debugging
+	// Q.debug = true;
+	
+	// Turn on default keyboard controls
+	Q.input.keyboardControls(Quintus.Input.KEY_NAMES);
 });
 
 // ## Possible Experimentations:
