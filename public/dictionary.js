@@ -1,3 +1,4 @@
+// dictionary.js: define an array for storing 73023 English words 
 var dict = ["A",
 "AOL",
 "Aachen",
