@@ -13,12 +13,12 @@ var dictSize = dict.length;
 console.log("Dictionary length: " + dictSize);
 var generator;
 var speed = -80;		// -ve: move to left, default: -80
-var minSpeed = -40;
+var minSpeed = 0;
 var interval = 2000;
 var total = 0;
 var enemies = [];
 var inText = "";
-var random = 1;
+var random = 0;
 
 // values for collision detection
 // when (A's collisionMask = B's type) ==> collision!!
@@ -29,9 +29,7 @@ var SPRITE_OTHER = 2;
 
 window.addEventListener("load",function() {
 
-// Set up an instance of the Quintus engine  and include
-// the Sprites, Scenes, Input and 2D module. The 2D module
-// includes the `TileLayer` class as well as the `2d` componet.
+// Set up an instance of the Quintus engine 
 var Q = window.Q = Quintus()
 		.include("Sprites, Scenes, Input, 2D, Anim, Touch, UI")
 		// Maximize this game to whatever the size of the browser is
@@ -62,9 +60,9 @@ Q.Sprite.extend("Enemy",{
 		var v;
 		
 		if (random == 1){
-			console.log("speed: " + speed);
+			// console.log("speed: " + speed);
 			v = speed * Math.random();	//  for random mode
-			console.log("random speed: " + v);
+			// console.log("random speed: " + v);
 		} else {
 			v = speed;
 		}
@@ -155,6 +153,8 @@ Q.UI.Text.extend("Input",{
 // ## Level1 scene
 Q.scene("level1",function(stage) {
 	
+	console.log("Scene level1: random = " + random + "; minSpeed = " + minSpeed + "; speed = " + speed);
+	
 	// initialization: reset the game states, inText, enemies, total number of enemies
 	Q.state.reset({HP: 100, kill: 0});
 	inText = "";
@@ -182,7 +182,8 @@ Q.scene("level1",function(stage) {
 		x: 0,
 		y: 350,
 		align: 'left',
-		label: "How to Play:\nSpace Bar: Fire the string\nBackspace: Remove the last typed character"
+		size: 20,
+		label: "How to Play:\nValid characters: \t A-Z (case-insensitive)\nSpace Bar: \t Fire the string\nBackspace: \t Remove the last typed character"
 	}));
 	
 	// add Base 
@@ -302,10 +303,24 @@ Q.scene('start',function(stage) {
 		label: "Hard" 
 	}));
 	
+	var rLabel;
+	if (random == 0){
+		rLabel = "Random mode: OFF";
+	} else {
+		rLabel = "Random mode: ON";
+	}
+	
+	var rButton = container.insert(new Q.UI.Button({ 
+		x: 0, 
+		y: 80,
+		fill: "#0099FF",
+		label: rLabel
+	}));
+	
 	var label = container.insert(new Q.UI.Text({
 		x: 0, 
 		y: -80 - easy.p.h, 
-		label: "<Typing of the Dead>\n====================\nType to kill the monsters as much as you can!"
+		label: "<Typing of the Dead>\n====================\nType to kill the monsters as many as you can!"
 	}));
 	
 	// controls of the difficulties
@@ -328,6 +343,19 @@ Q.scene('start',function(stage) {
 		speed = -120;
 		interval = 1500;
 		Q.stageScene('level1');
+	});
+	
+	rButton.on("click",function() {
+		if (random == 0){
+			// random mode is OFF, click to turn it ON, set random = 1 
+			this.p.label = "Random mode: ON";
+			random = 1;
+			minSpeed = -50;
+		} else {
+			this.p.label = "Random mode: OFF";
+			random = 0;
+			minSpeed = 0;
+		}
 	});
 	
 	// Expand the container to visibily fit it's contents (with a padding of 20 pixels)
