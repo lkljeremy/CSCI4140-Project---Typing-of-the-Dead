@@ -31,7 +31,7 @@ var SPRITE_OTHER = 2;
 //var socket = io.connect(window.location.hostname);
 
 // for Heroku deployment	
-var socket = io(window.location.hostname);
+var socket = io.connect(window.location.hostname);
 
 
 /* Event handlers from Socket/server */
