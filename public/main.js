@@ -32,7 +32,7 @@ var SPRITE_OTHER = 2;
 
 // for Heroku deployment	
 var hostname = window.location.hostname;
-var socket = io.connect(hostname);
+var socket = io.connect(hostname + ':8000/');
 
 
 /* Event handlers from Socket/server */
