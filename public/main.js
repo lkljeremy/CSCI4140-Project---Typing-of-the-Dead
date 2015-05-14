@@ -29,7 +29,7 @@ var SPRITE_OTHER = 2;
 
 // socket.io
 //var socket = io.connect(window.location.hostname);	
-var socket = io('ws://' + window.location.hostname + ':5000/');
+var socket = io('ws://' + window.location.hostname);
 
 
 /* Event handlers from Socket/server */
