@@ -7,7 +7,7 @@ app.use( express.static( __dirname + '/public' ) );
 // global variables
 var sessionList = new Array();
 var currentSession = 0;
-
+var session = 414;
 
 
 // redirect user to a dedicated session
@@ -54,13 +54,23 @@ io.on( 'connection', function( socket ) {
 	} );
 	
 	
-	// example emit 
-	socket.on( 'command', function( data ) {
-		console.log( 'command in room ' + socket.rooms[1] + ': ' + data );
-		io.to(socket.rooms[1]).emit( 'command', data );
+	// 'options' event
+	socket.on( 'options', function( data ) {
+		console.log( 'game options in room ' + socket.rooms[1] + ': difficulties = ' + data['difficulties'] + "; random = " + data['random']);
+		io.to(socket.rooms[1]).emit( 'options', data );
 	} );
 	
+	// 'enemy' event
+	socket.on( 'enemy', function( data ) {
+		console.log( 'enemy created in room ' + socket.rooms[1]);
+		io.to(socket.rooms[1]).emit( 'enemy', data );
+	} );
 	
+	// 'fire' event
+	socket.on( 'fire', function( data ) {
+		console.log( 'Fire in room ' + socket.rooms[1] + ': ' + data );
+		io.to(socket.rooms[1]).emit( 'fire', data );
+	} );
 	
 });
 

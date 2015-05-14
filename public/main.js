@@ -19,6 +19,7 @@ var total = 0;
 var enemies = [];
 var inText = "";
 var random = 0;
+var host = 1;		// default: client is host (or single player)
 
 // values for collision detection
 // when (A's collisionMask = B's type) ==> collision!!
@@ -27,9 +28,7 @@ var SPRITE_RACER = 1;
 var SPRITE_OTHER = 2;
 
 
-// socket.io
-//var socket = io.connect(window.location.hostname);
-
+/* socket.io   ****/
 // for Heroku deployment
 if (window.location.hostname == 'localhost'){
 	var hostname = window.location.hostname + ':8000/';
@@ -172,7 +171,7 @@ Q.UI.Text.extend("Input",{
 // ## Level1 scene
 Q.scene("level1",function(stage) {
 	
-	console.log("Scene level1: random = " + random + "; minSpeed = " + minSpeed + "; speed = " + speed);
+	console.log("Scene level1: random = " + random + "; minSpeed = " + minSpeed + "; speed = " + speed + "; interval = " + interval);
 	
 	// initialization: reset the game states, inText, enemies, total number of enemies
 	Q.state.reset({HP: 100, kill: 0});
@@ -215,7 +214,6 @@ Q.scene("level1",function(stage) {
 		var targetText = dict[ran];
 		// console.log("Word generated: " + targetText);
 		
-		// labelled enemy
 		enemies[total] = stage.insert(new Q.Enemy({
 			x: 1200, 
 			y: 0, 
@@ -248,8 +246,13 @@ Q.scene("level1",function(stage) {
 		total++;
 		
 	}, interval);
-
+	
+	
+	// handle the 'enemy' event to generate enemies
+	socket.on( 'enemy' , function( data ){
 		
+		
+	});
 	
 	// detect key pressed, event "keydown"
 	Q.input.on("keydown", stage, function(e){
@@ -293,6 +296,115 @@ Q.scene("level1",function(stage) {
 	
 	
 });
+
+// host scene
+Q.scene('host',function(stage) {
+
+	stage.insert(new Q.Repeater({ asset: "background-wall.png", speedX: 0.5, speedY: 0.5 }));
+	
+	var container = stage.insert(new Q.UI.Container({
+		x: Q.width/2, 
+		y: Q.height/2, 
+		fill: "rgba(0,0,0,0.5)"
+	}));
+
+	var hostB = container.insert(new Q.UI.Button({ 
+		x: -50, 
+		y: 0, 
+		fill: "#CCCCCC",
+		label: "Host" 
+	}));
+	
+	var clientB = container.insert(new Q.UI.Button({ 
+		x: 50, 
+		y: 0, 
+		fill: "#CCCCCC",
+		label: "Client" 
+	}));
+	
+	var label = container.insert(new Q.UI.Text({
+		x: 0, 
+		y: -80 - hostB.p.h, 
+		label: "<Typing of the Dead>\n====================\nType to kill the monsters as many as you can!"
+	}));
+	
+	// controls of the difficulties
+	hostB.on("click",function() {
+		Q.clearStages();
+		host = 1;
+		Q.stageScene('start');
+	});
+
+	clientB.on("click",function() {
+		Q.clearStages();
+		host = 0;
+		Q.stageScene('wait');
+	});
+	
+	// Expand the container to visibily fit it's contents (with a padding of 20 pixels)
+	container.fit(20);
+});
+
+
+// wait scene
+Q.scene('wait',function(stage) {
+	stage.insert(new Q.Repeater({ asset: "background-wall.png", speedX: 0.5, speedY: 0.5 }));
+	
+	var container = stage.insert(new Q.UI.Container({
+		x: Q.width/2, 
+		y: Q.height/2, 
+		fill: "rgba(0,0,0,0.5)"
+	}));
+	
+	var label2 = container.insert(new Q.UI.Text({
+		x: 0, 
+		y: 0, 
+		color: 'yellow',
+		label: "Please wait for host to select game option . . ."
+	}));
+	
+	var label = container.insert(new Q.UI.Text({
+		x: 0, 
+		y: -80 - label2.p.h, 
+		label: "<Typing of the Dead>\n====================\nType to kill the monsters as many as you can!"
+	}));
+	
+	container.fit(20);
+	
+	// wait for host to start, receive game options
+	socket.on('options', function( data ) {
+		
+		if (data['difficulties'] == 1){
+			// easy
+			speed = -80;
+			interval = 2000;
+			
+		} else if (data['difficulties'] == 2){
+			// medium
+			speed = -100;
+			interval = 2000;
+			
+		} else if (data['difficulties'] == 3){
+			// hard
+			speed = -120;
+			interval = 1500;
+		}
+		
+		if (data['random'] == 0){
+			// random mode is OFF
+			random = 0;
+			minSpeed = 0;
+		} else {
+			random = 1;
+			minSpeed = -50;
+		}
+		
+		Q.clearStages();
+		Q.stageScene('level1');
+		
+	});
+});
+
 
 // start scene
 Q.scene('start',function(stage) {
@@ -351,6 +463,7 @@ Q.scene('start',function(stage) {
 		Q.clearStages();
 		speed = -80;
 		interval = 2000;
+		socket.emit('options', {'difficulties': 1, 'random': random});
 		Q.stageScene('level1');
 	});
 
@@ -358,6 +471,7 @@ Q.scene('start',function(stage) {
 		Q.clearStages();
 		speed = -100;
 		interval = 2000;
+		socket.emit('options', {'difficulties': 2, 'random': random});
 		Q.stageScene('level1');
 	});
 	
@@ -365,6 +479,7 @@ Q.scene('start',function(stage) {
 		Q.clearStages();
 		speed = -120;
 		interval = 1500;
+		socket.emit('options', {'difficulties': 3, 'random': random});
 		Q.stageScene('level1');
 	});
 	
@@ -426,7 +541,7 @@ Q.load("base.png, lufsig.png, sprites.png, sprites.json, level.json, tiles.png, 
 	Q.compileSheets("sprites.png","sprites.json");
 
 	// call stageScene to run the game
-	Q.stageScene("start");
+	Q.stageScene("host");
   
 	// Turn visual debugging
 	// Q.debug = true;
