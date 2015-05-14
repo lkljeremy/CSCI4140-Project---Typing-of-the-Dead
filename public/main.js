@@ -207,17 +207,26 @@ Q.scene("level1",function(stage) {
 	// add Base 
 	stage.insert(new Q.Base({ x: 180, y: 160 }));
 	
-	// generate Enemy every 2 sec interval
-	generator = setInterval(function(){
-		// randomly generate a word from dict
-		var ran = Math.floor(Math.random()*(dictSize));
-		var targetText = dict[ran];
-		// console.log("Word generated: " + targetText);
-		
+	// generate Enemy text every interval
+	if (host == 1){
+		console.log("This host generates the text");
+		generator = setInterval(function(){
+			// randomly generate a word from dict
+			var ran = Math.floor(Math.random()*(dictSize));
+			var targetText = dict[ran];
+			// console.log("Word generated: " + targetText);
+			
+			socket.emit('enemy', {'text': targetText});
+			
+		}, interval);
+	}
+	
+	// handle the 'enemy' event to generate enemies
+	socket.on( 'enemy' , function( data ){
 		enemies[total] = stage.insert(new Q.Enemy({
 			x: 1200, 
 			y: 0, 
-			label_text: targetText,
+			label_text: data['text'],
 			label_text_color: 'grey',
 			label_offset_x: 0,
 			label_offset_y: -50
@@ -230,11 +239,11 @@ Q.scene("level1",function(stage) {
 		}), enemies[total]);
 		
 		var label = container.insert(new Q.UI.Text({
-		label: targetText,
+		label: enemies[total].p.label_text,
 		color: enemies[total].p.label_text_color
 		}));
 		
-		/*
+		/* old version of labelling *//*
 		var label = stage.insert(new Q.UI.Text({
 			label: enemies[total].p.label_text,
 			color: enemies[total].p.label_text_color,
@@ -244,14 +253,6 @@ Q.scene("level1",function(stage) {
 		*/
 		
 		total++;
-		
-	}, interval);
-	
-	
-	// handle the 'enemy' event to generate enemies
-	socket.on( 'enemy' , function( data ){
-		
-		
 	});
 	
 	// detect key pressed, event "keydown"
@@ -270,13 +271,8 @@ Q.scene("level1",function(stage) {
 			} else if (e == 32){
 				// space: fire the string
 				console.log("Fire! String: " + inText);
-				for (i = 0; i < total; i++){
-					if (inText == enemies[i].p.label_text.toUpperCase()){
-						enemies[i].destroy();
-						Q.state.inc("kill", 1);
-					}
-				}
 				
+				socket.emit('fire', {'text': inText});
 				inText = "";
 				
 			} else if (e == 8){
@@ -294,7 +290,15 @@ Q.scene("level1",function(stage) {
 		}
 	});
 	
-	
+	// 'fire' handler: receive the fired text and check to kill enemies
+	socket.on( 'fire' , function( data ){
+		for (var i = 0; i < total; i++){
+			if (data['text'] == enemies[i].p.label_text.toUpperCase()){
+				enemies[i].destroy();
+				Q.state.inc("kill", 1);
+			}
+		}
+	});
 });
 
 // host scene
@@ -348,6 +352,7 @@ Q.scene('host',function(stage) {
 
 // wait scene
 Q.scene('wait',function(stage) {
+	
 	stage.insert(new Q.Repeater({ asset: "background-wall.png", speedX: 0.5, speedY: 0.5 }));
 	
 	var container = stage.insert(new Q.UI.Container({
@@ -400,6 +405,7 @@ Q.scene('wait',function(stage) {
 		}
 		
 		Q.clearStages();
+		console.log("from wait scene");
 		Q.stageScene('level1');
 		
 	});
@@ -408,6 +414,7 @@ Q.scene('wait',function(stage) {
 
 // start scene
 Q.scene('start',function(stage) {
+	
 	// Add in a repeater for a little parallax action
 	stage.insert(new Q.Repeater({ asset: "background-wall.png", speedX: 0.5, speedY: 0.5 }));
 	
@@ -460,27 +467,15 @@ Q.scene('start',function(stage) {
 	
 	// controls of the difficulties
 	easy.on("click",function() {
-		Q.clearStages();
-		speed = -80;
-		interval = 2000;
 		socket.emit('options', {'difficulties': 1, 'random': random});
-		Q.stageScene('level1');
 	});
 
 	medium.on("click",function() {
-		Q.clearStages();
-		speed = -100;
-		interval = 2000;
 		socket.emit('options', {'difficulties': 2, 'random': random});
-		Q.stageScene('level1');
 	});
 	
 	hard.on("click",function() {
-		Q.clearStages();
-		speed = -120;
-		interval = 1500;
 		socket.emit('options', {'difficulties': 3, 'random': random});
-		Q.stageScene('level1');
 	});
 	
 	rButton.on("click",function() {
@@ -498,10 +493,51 @@ Q.scene('start',function(stage) {
 	
 	// Expand the container to visibily fit it's contents (with a padding of 20 pixels)
 	container.fit(20);
+	
+	// wait for host to start, receive game options
+	socket.on('options', function( data ) {
+		
+		if (data['difficulties'] == 1){
+			// easy
+			speed = -80;
+			interval = 2000;
+			
+		} else if (data['difficulties'] == 2){
+			// medium
+			speed = -100;
+			interval = 2000;
+			
+		} else if (data['difficulties'] == 3){
+			// hard
+			speed = -120;
+			interval = 1500;
+		}
+		
+		if (data['random'] == 0){
+			// random mode is OFF
+			random = 0;
+			minSpeed = 0;
+		} else {
+			random = 1;
+			minSpeed = -50;
+		}
+		
+		Q.clearStages();
+		console.log("from start scene");
+		Q.stageScene('level1');
+		
+	});
+	
 });
 
 // endGame scene: to display a game over popup box
 Q.scene('endGame',function(stage) {
+	
+	// remove all socket listeners from early games
+	socket.removeAllListeners('options');
+	socket.removeAllListeners('enemy');
+	socket.removeAllListeners('fire');
+	
 	var container = stage.insert(new Q.UI.Container({
 		x: Q.width/2, 
 		y: Q.height/2, 
@@ -525,7 +561,11 @@ Q.scene('endGame',function(stage) {
 	// When the button is clicked, clear all the stages and restart the game.
 	button.on("click",function() {
 		Q.clearStages();
-		Q.stageScene('start');
+		if (host == 1){
+			Q.stageScene('start');
+		} else {
+			Q.stageScene('wait');
+		}
 	});
 
 	// Expand the container to visibily fit it's contents (with a padding of 20 pixels)

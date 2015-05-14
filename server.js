@@ -62,13 +62,13 @@ io.on( 'connection', function( socket ) {
 	
 	// 'enemy' event
 	socket.on( 'enemy', function( data ) {
-		console.log( 'enemy created in room ' + socket.rooms[1]);
+		console.log( 'enemy created in room ' + socket.rooms[1] + ": " + data['text']);
 		io.to(socket.rooms[1]).emit( 'enemy', data );
 	} );
 	
 	// 'fire' event
 	socket.on( 'fire', function( data ) {
-		console.log( 'Fire in room ' + socket.rooms[1] + ': ' + data );
+		console.log( 'Fire in room ' + socket.rooms[1] + ': ' + data['text'] );
 		io.to(socket.rooms[1]).emit( 'fire', data );
 	} );
 	
