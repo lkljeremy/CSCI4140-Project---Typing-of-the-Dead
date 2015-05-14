@@ -31,7 +31,7 @@ var SPRITE_OTHER = 2;
 //var socket = io.connect(window.location.hostname);
 
 // for Heroku deployment	
-var hostname = window.location.hostname || 'localhost:5000';
+var hostname = window.location.hostname;
 var socket = io.connect(hostname);
 
 
