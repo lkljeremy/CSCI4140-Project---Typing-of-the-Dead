@@ -40,14 +40,26 @@ var server = app.listen(app.get('port'), function() {
 var io = require('socket.io')(server);
 io.on( 'connection', function( socket ) {
 	
-	// 'register' event
+	// 'register' event, join the room 'session'
 	socket.join(session);
 	console.log( 'New user connected, room: ' + session );
+	
+	setTimeout(function () {
+		io.to(socket.rooms[1]).emit('connected', session);
+	}, 1500);
 	
 	// 'disconnect' event
 	socket.on( 'disconnect', function() {
 		console.log( 'User disconnected' );
 	} );
+	
+	
+	// example emit 
+	socket.on( 'command', function( data ) {
+		console.log( 'command in room ' + socket.rooms[1] + ': ' + data );
+		io.to(socket.rooms[1]).emit( 'command', data );
+	} );
+	
 	
 	
 });

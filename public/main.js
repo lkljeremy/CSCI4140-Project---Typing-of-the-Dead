@@ -27,6 +27,17 @@ var SPRITE_RACER = 1;
 var SPRITE_OTHER = 2;
 
 
+// socket.io
+//var socket = io.connect(window.location.hostname);	
+var socket = io('ws://' + window.location.hostname + ':5000/');
+
+
+/* Event handlers from Socket/server */
+socket.on('connected', function( data ) {
+	console.log("Connected in room: " + data);
+});
+
+
 window.addEventListener("load",function() {
 
 // Set up an instance of the Quintus engine 
