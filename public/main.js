@@ -183,12 +183,12 @@ Q.scene("level1",function(stage) {
 		y: 350,
 		align: 'left',
 		size: 20,
-		label: "How to Play:\nValid characters: \t A-Z (case-insensitive)\nSpace Bar: \t Fire the string\nBackspace: \t Remove the last typed character"
+		label: "How to Play:\nValid characters: \t A-Z (case-insensitive), SINGLE QUOTE (')\nSpace Bar: \t Fire the string\nBackspace: \t Remove the last typed character"
 	}));
 	
 	// add Base 
 	stage.insert(new Q.Base({ x: 180, y: 160 }));
-  
+	
 	// generate Enemy every 2 sec interval
 	generator = setInterval(function(){
 		// randomly generate a word from dict
@@ -219,11 +219,11 @@ Q.scene("level1",function(stage) {
 		
 		/*
 		var label = stage.insert(new Q.UI.Text({
-			label: label_sprite.p.label_text,
-			color: label_sprite.p.label_text_color,
-			x: label_sprite.p.label_offset_x,
-			y: label_sprite.p.label_offset_y
-		}), label_sprite);
+			label: enemies[total].p.label_text,
+			color: enemies[total].p.label_text_color,
+			x: enemies[total].p.label_offset_x,
+			y: enemies[total].p.label_offset_y
+		}), enemies[total]);
 		*/
 		
 		total++;
@@ -235,9 +235,13 @@ Q.scene("level1",function(stage) {
 	// detect key pressed, event "keydown"
 	Q.input.on("keydown", stage, function(e){
 		try{
-			if (e >= 65 && e <=90){
-				// A-Z: add the char to inText
-				var key = String.fromCharCode(e);
+			if ((e >= 65 && e <=90) || e==222){
+				// A-Z or single quote: add the char to inText
+				if (e == 222){
+					var key = "'";
+				} else {
+					var key = String.fromCharCode(e);
+				}
 				// console.log("Key: " + key);
 				inText += key;
 				
@@ -258,7 +262,7 @@ Q.scene("level1",function(stage) {
 				console.log("Backspace!");
 				inText = inText.slice(0,-1);
 			} else {
-				// others: do nothing
+				// do nothing
 			}
 			
 			inputDisplay.input(inText);

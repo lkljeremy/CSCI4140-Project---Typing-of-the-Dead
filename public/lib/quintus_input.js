@@ -97,9 +97,9 @@ Quintus.Input = function(Q) {
 	X: 'X',
 	Y: 'Y',
 	Z: 'Z',
-	BACKSPACE: 'backspace'
-	// NOT working:
-	// SINGLE_QUOTE: 'single'
+	BACKSPACE: 'backspace',
+	// special char, directly map its keycode to an event name
+	222: 'single_quote'
   };
 
   var DEFAULT_TOUCH_CONTROLS  = [ ['left','<' ],
