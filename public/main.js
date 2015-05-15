@@ -75,19 +75,8 @@ Q.Sprite.extend("Base", {
 Q.Sprite.extend("Enemy",{
 	init: function(p) {
 		
-		var v;
-		
-		if (random == 1){
-			// console.log("speed: " + speed);
-			v = speed * Math.random();	//  for random mode
-			// console.log("random speed: " + v);
-		} else {
-			v = speed;
-		}
-		
 		this._super(p, { 
-			asset: "lufsig.png",
-			vx: minSpeed + v, 	
+			asset: "lufsig.png",	
 			text: 'default text',
 			type: SPRITE_RACER,
 			collisionMask: SPRITE_OTHER
@@ -207,7 +196,7 @@ Q.scene("level1",function(stage) {
 	// add Base 
 	stage.insert(new Q.Base({ x: 180, y: 160 }));
 	
-	// generate Enemy text every interval
+	// HOST generates Enemy text every interval
 	if (host == 1){
 		console.log("This host generates the text");
 		generator = setInterval(function(){
@@ -216,16 +205,28 @@ Q.scene("level1",function(stage) {
 			var targetText = dict[ran];
 			// console.log("Word generated: " + targetText);
 			
-			socket.emit('enemy', {'text': targetText});
+			// host generates the random speed for everyone
+			var v;
+			if (random == 1){
+				// console.log("speed: " + speed);
+				v = speed * Math.random();	//  for random mode
+				// console.log("random speed: " + v);
+			} else {
+				v = speed;
+			}
+			
+			socket.emit('enemy', {'text': targetText, 'speed': v});
 			
 		}, interval);
 	}
 	
 	// handle the 'enemy' event to generate enemies
 	socket.on( 'enemy' , function( data ){
+		
 		enemies[total] = stage.insert(new Q.Enemy({
 			x: 1200, 
 			y: 0, 
+			vx: minSpeed + data['speed'], 
 			label_text: data['text'],
 			label_text_color: 'grey',
 			label_offset_x: 0,
