@@ -2,7 +2,7 @@ Typing of the Dead
 ==============================
 
 Web game for course project of CSCI4140 spring 2015, CUHK.
-Developpd by Jeremy Lo.
+Developed by Jeremy Lo.
 
 Demo page: https://peaceful-fortress-9606.herokuapp.com/
 
@@ -23,6 +23,7 @@ Run on Heroku
 	$ git add .
 	$ git commit -m "comment"
 	$ git push heroku master
+	$ heroku open
 
 
 How to play
