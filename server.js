@@ -8,7 +8,7 @@ app.use( express.static( __dirname + '/public' ) );
 var sessionList = new Array();
 var currentSession = 0;
 var session = 414;
-
+var clients = [];
 
 // redirect user to a dedicated session
 app.get( '/', function ( request, response ) {
@@ -42,11 +42,12 @@ io.on( 'connection', function( socket ) {
 	
 	// 'register' event, join the room 'session'
 	socket.join(session);
+	clients.push(socket.id);
 	console.log( 'New user connected, room: ' + session );
 	
 	setTimeout(function () {
-		io.to(socket.rooms[1]).emit('connected', session);
-	}, 1500);
+		io.to(socket.id).emit('connected', {'session': session, 'id': socket.id});
+	}, 1000);
 	
 	// 'disconnect' event
 	socket.on( 'disconnect', function() {
@@ -68,7 +69,7 @@ io.on( 'connection', function( socket ) {
 	
 	// 'fire' event
 	socket.on( 'fire', function( data ) {
-		console.log( 'Fire in room ' + socket.rooms[1] + ': ' + data['text'] );
+		console.log( 'Fire in room ' + socket.rooms[1] + ': ' + data['text'] + " from client " + data['id']);
 		io.to(socket.rooms[1]).emit( 'fire', data );
 	} );
 	

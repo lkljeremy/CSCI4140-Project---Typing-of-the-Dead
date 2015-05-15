@@ -20,6 +20,7 @@ var enemies = [];
 var inText = "";
 var random = 0;
 var host = 1;		// default: client is host (or single player)
+var clientID;
 
 // values for collision detection
 // when (A's collisionMask = B's type) ==> collision!!
@@ -41,7 +42,8 @@ var socket = io.connect(hostname);
 
 /* Event handlers from Socket/server */
 socket.on('connected', function( data ) {
-	console.log("Connected in room: " + data);
+	clientID = data['id'];
+	console.log("Connected in room: " + data['session'] + "; your ID: " + data['id']);
 });
 
 
@@ -273,7 +275,7 @@ Q.scene("level1",function(stage) {
 				// space: fire the string
 				console.log("Fire! String: " + inText);
 				
-				socket.emit('fire', {'text': inText});
+				socket.emit('fire', {'text': inText, 'id': clientID});
 				inText = "";
 				
 			} else if (e == 8){
@@ -296,7 +298,9 @@ Q.scene("level1",function(stage) {
 		for (var i = 0; i < total; i++){
 			if (data['text'] == enemies[i].p.label_text.toUpperCase()){
 				enemies[i].destroy();
-				Q.state.inc("kill", 1);
+				if (clientID == data['id']){
+					Q.state.inc("kill", 1);
+				}
 			}
 		}
 	});
